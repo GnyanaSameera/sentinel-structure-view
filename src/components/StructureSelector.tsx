@@ -2,11 +2,11 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Building, Bridge, Ship, Zap } from 'lucide-react';
+import { Building, Construction, Ship, Zap } from 'lucide-react';
 
 const StructureSelector = ({ value, onChange }) => {
   const structures = [
-    { id: 'bridge', name: 'Bridge', icon: Bridge, description: 'Highway, railway, or pedestrian bridges' },
+    { id: 'bridge', name: 'Bridge', icon: Construction, description: 'Highway, railway, or pedestrian bridges' },
     { id: 'floating', name: 'Floating Structure', icon: Ship, description: 'Offshore platforms, floating docks' },
     { id: 'building', name: 'Building', icon: Building, description: 'High-rise buildings, commercial structures' },
     { id: 'towers', name: 'Towers', icon: Zap, description: 'Communication towers, power transmission towers' }
