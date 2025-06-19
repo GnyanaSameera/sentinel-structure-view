@@ -1,18 +1,12 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Activity, MapPin, Upload, BarChart3, Settings } from 'lucide-react';
-import { format } from 'date-fns';
-import FileUpload from '@/components/FileUpload';
-import StructureSelector from '@/components/StructureSelector';
-import LocationSelector from '@/components/LocationSelector';
-import DataVisualization from '@/components/DataVisualization';
-import ThresholdSettings from '@/components/ThresholdSettings';
-import DateRangeFilter from '@/components/DateRangeFilter';
+import { Upload, BarChart3, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AlertHeader from '@/components/AlertHeader';
+import SetupTab from '@/components/SetupTab';
+import AnalysisTab from '@/components/AnalysisTab';
+import SettingsTab from '@/components/SettingsTab';
 
 const Index = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -91,46 +85,11 @@ const Index = () => {
     return analysisData.alerts.length;
   };
 
-  const handleDateRangeAnalysis = () => {
-    if (!analysisData) {
-      toast({
-        title: "No Data Available",
-        description: "Please run the initial analysis first before filtering by date.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    toast({
-      title: "Analysis Updated",
-      description: `Data filtered for selected date range: ${dateRange?.from ? format(dateRange.from, 'MMM dd, yyyy') : ''} - ${dateRange?.to ? format(dateRange.to, 'MMM dd, yyyy') : ''}`,
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center space-y-4 animate-fade-in">
-          <div className="flex items-center justify-center gap-2">
-            <Activity className="h-8 w-8 text-blue-600" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
-              Structural Monitoring Interface
-            </h1>
-          </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Real-time sensor data analysis platform for infrastructure monitoring
-          </p>
-          
-          {getAlertCount() > 0 && (
-            <div className="flex items-center justify-center gap-2 animate-pulse">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              <Badge variant="destructive" className="animate-bounce">
-                {getAlertCount()} Active Alert{getAlertCount() > 1 ? 's' : ''}
-              </Badge>
-            </div>
-          )}
-        </div>
+        <AlertHeader alertCount={getAlertCount()} />
 
         {/* Main Content */}
         <Tabs defaultValue="setup" className="w-full">
@@ -149,114 +108,34 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="setup" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* File Upload */}
-              <Card className="hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Upload className="h-5 w-5 text-blue-600" />
-                    File Upload
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <FileUpload onFileUpload={setUploadedFile} />
-                </CardContent>
-              </Card>
-
-              {/* Structure & Location */}
-              <Card className="hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-green-600" />
-                    Structure & Location
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <StructureSelector 
-                    value={selectedStructure}
-                    onChange={setSelectedStructure}
-                  />
-                  <LocationSelector 
-                    onLocationSelect={setSelectedLocation}
-                    selectedLocation={selectedLocation}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Analysis Controls */}
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="pt-6">
-                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Badge variant={uploadedFile ? "default" : "secondary"}>
-                      File: {uploadedFile ? "✓" : "✗"}
-                    </Badge>
-                    <Badge variant={selectedStructure ? "default" : "secondary"}>
-                      Structure: {selectedStructure ? "✓" : "✗"}
-                    </Badge>
-                    <Badge variant={selectedLocation ? "default" : "secondary"}>
-                      Location: {selectedLocation ? "✓" : "✗"}
-                    </Badge>
-                  </div>
-                  
-                  <Button 
-                    onClick={runAnalysis}
-                    disabled={!uploadedFile || !selectedStructure || !selectedLocation || isAnalyzing}
-                    className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 transform hover:scale-105 transition-all duration-200"
-                    size="lg"
-                  >
-                    {isAnalyzing ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Analyzing...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4" />
-                        Run Analysis
-                      </div>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="setup">
+            <SetupTab
+              uploadedFile={uploadedFile}
+              setUploadedFile={setUploadedFile}
+              selectedStructure={selectedStructure}
+              setSelectedStructure={setSelectedStructure}
+              selectedLocation={selectedLocation}
+              setSelectedLocation={setSelectedLocation}
+              isAnalyzing={isAnalyzing}
+              onRunAnalysis={runAnalysis}
+            />
           </TabsContent>
 
-          <TabsContent value="analysis" className="space-y-6">
-            {analysisData ? (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-                  <DateRangeFilter 
-                    dateRange={dateRange}
-                    onDateRangeChange={setDateRange}
-                    onRunAnalysis={handleDateRangeAnalysis}
-                  />
-                </div>
-                <DataVisualization 
-                  data={analysisData}
-                  analysisType={analysisType}
-                  onAnalysisTypeChange={setAnalysisType}
-                  thresholds={thresholds}
-                  dateRange={dateRange}
-                />
-              </>
-            ) : (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No Analysis Data</h3>
-                  <p className="text-gray-500">Please complete the setup and run analysis to view results.</p>
-                </CardContent>
-              </Card>
-            )}
+          <TabsContent value="analysis">
+            <AnalysisTab
+              analysisData={analysisData}
+              analysisType={analysisType}
+              setAnalysisType={setAnalysisType}
+              thresholds={thresholds}
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+            />
           </TabsContent>
 
           <TabsContent value="settings">
-            <ThresholdSettings 
+            <SettingsTab
               thresholds={thresholds}
-              onThresholdsChange={setThresholds}
+              setThresholds={setThresholds}
             />
           </TabsContent>
         </Tabs>
