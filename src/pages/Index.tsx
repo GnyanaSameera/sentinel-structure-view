@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -88,6 +87,22 @@ const Index = () => {
   const getAlertCount = () => {
     if (!analysisData) return 0;
     return analysisData.alerts.length;
+  };
+
+  const handleDateRangeAnalysis = () => {
+    if (!analysisData) {
+      toast({
+        title: "No Data Available",
+        description: "Please run the initial analysis first before filtering by date.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Analysis Updated",
+      description: `Data filtered for selected date range: ${dateRange?.from ? format(dateRange.from, 'MMM dd, yyyy') : ''} - ${dateRange?.to ? format(dateRange.to, 'MMM dd, yyyy') : ''}`,
+    });
   };
 
   return (
@@ -214,6 +229,7 @@ const Index = () => {
                   <DateRangeFilter 
                     dateRange={dateRange}
                     onDateRangeChange={setDateRange}
+                    onRunAnalysis={handleDateRangeAnalysis}
                   />
                 </div>
                 <DataVisualization 

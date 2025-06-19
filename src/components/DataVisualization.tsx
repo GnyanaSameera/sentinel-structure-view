@@ -1,16 +1,24 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { AlertTriangle, Activity, Thermometer, TrendingUp, TrendingDown } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 
 const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, thresholds, dateRange }) => {
   const [selectedSensor, setSelectedSensor] = useState('all');
 
   if (!data) return null;
+
+  // Filter data based on date range if provided
+  const filteredTimeSeriesData = dateRange?.from && dateRange?.to 
+    ? data.timeSeriesData.filter(item => {
+        const itemDate = new Date(item.time);
+        return itemDate >= dateRange.from && itemDate <= dateRange.to;
+      })
+    : data.timeSeriesData;
 
   const getStrainStats = () => {
     const strainValues = data.sensors.map(s => s.strain);
@@ -40,6 +48,24 @@ const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, threshold
       return [`${value.toFixed(2)}°C`, name];
     }
     return [value, name];
+  };
+
+  const customTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 border border-gray-300 rounded-lg shadow-lg">
+          <p className="font-semibold text-gray-800 mb-2">
+            {format(new Date(label), 'MMM dd, yyyy HH:mm:ss')}
+          </p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }} className="text-sm">
+              {entry.name}: {formatTooltipValue(entry.value, entry.name)[0]}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
   };
 
   const getThresholdAlerts = () => {
@@ -73,7 +99,14 @@ const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, threshold
     <div className="space-y-6 animate-fade-in">
       {/* Analysis Type Selector */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Analysis Results</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Analysis Results</h2>
+          {dateRange?.from && dateRange?.to && (
+            <p className="text-sm text-gray-600 mt-1">
+              Filtered data: {format(dateRange.from, 'MMM dd, yyyy')} - {format(dateRange.to, 'MMM dd, yyyy')}
+            </p>
+          )}
+        </div>
         <Select value={analysisType} onValueChange={onAnalysisTypeChange}>
           <SelectTrigger className="w-48">
             <SelectValue />
@@ -225,46 +258,77 @@ const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, threshold
         </CardContent>
       </Card>
 
-      {/* Time Series Charts */}
+      {/* Enhanced Time Series Charts */}
       <Card>
         <CardHeader>
-          <CardTitle>Time Series Data</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Time Series Data ({filteredTimeSeriesData.length} data points)</span>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-0.5 bg-red-500"></div>
+                <span>Max Threshold</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-0.5 bg-orange-500"></div>
+                <span>Min Threshold</span>
+              </div>
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.timeSeriesData}>
+              <LineChart data={filteredTimeSeriesData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis 
                   dataKey="time" 
-                  tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                  tickFormatter={(value) => format(new Date(value), 'HH:mm')}
                   className="text-xs"
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
                 />
                 <YAxis className="text-xs" />
-                <Tooltip 
-                  labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={formatTooltipValue}
-                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid #ccc' }}
-                />
+                <Tooltip content={customTooltip} />
                 <Legend />
+                
+                {/* Threshold lines for strain */}
+                {(analysisType === 'both' || analysisType === 'strain') && (
+                  <>
+                    <ReferenceLine y={thresholds.strain.max} stroke="#ef4444" strokeDasharray="5 5" strokeWidth={2} />
+                    <ReferenceLine y={thresholds.strain.min} stroke="#f97316" strokeDasharray="5 5" strokeWidth={2} />
+                  </>
+                )}
+                
+                {/* Threshold lines for temperature */}
+                {(analysisType === 'both' || analysisType === 'temperature') && (
+                  <>
+                    <ReferenceLine y={thresholds.temperature.max} stroke="#dc2626" strokeDasharray="3 3" strokeWidth={2} />
+                    <ReferenceLine y={thresholds.temperature.min} stroke="#ea580c" strokeDasharray="3 3" strokeWidth={2} />
+                  </>
+                )}
                 
                 {(analysisType === 'both' || analysisType === 'strain') && (
                   <>
-                    <Line type="monotone" dataKey="strain1" stroke="#3b82f6" strokeWidth={2} name="Strain Sensor 1" />
-                    <Line type="monotone" dataKey="strain2" stroke="#06b6d4" strokeWidth={2} name="Strain Sensor 2" />
-                    <Line type="monotone" dataKey="strain3" stroke="#8b5cf6" strokeWidth={2} name="Strain Sensor 3" />
+                    <Line type="monotone" dataKey="strain1" stroke="#3b82f6" strokeWidth={2} name="Strain Sensor 1" dot={false} />
+                    <Line type="monotone" dataKey="strain2" stroke="#06b6d4" strokeWidth={2} name="Strain Sensor 2" dot={false} />
+                    <Line type="monotone" dataKey="strain3" stroke="#8b5cf6" strokeWidth={2} name="Strain Sensor 3" dot={false} />
                   </>
                 )}
                 
                 {(analysisType === 'both' || analysisType === 'temperature') && (
                   <>
-                    <Line type="monotone" dataKey="temp1" stroke="#f59e0b" strokeWidth={2} name="Temperature 1" />
-                    <Line type="monotone" dataKey="temp2" stroke="#ef4444" strokeWidth={2} name="Temperature 2" />
-                    <Line type="monotone" dataKey="temp3" stroke="#f97316" strokeWidth={2} name="Temperature 3" />
+                    <Line type="monotone" dataKey="temp1" stroke="#f59e0b" strokeWidth={2} name="Temperature 1" dot={false} />
+                    <Line type="monotone" dataKey="temp2" stroke="#ef4444" strokeWidth={2} name="Temperature 2" dot={false} />
+                    <Line type="monotone" dataKey="temp3" stroke="#f97316" strokeWidth={2} name="Temperature 3" dot={false} />
                   </>
                 )}
               </LineChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+            <p><strong>Legend:</strong> Red dashed lines = Maximum thresholds, Orange dashed lines = Minimum thresholds</p>
+            <p>Hover over data points to see exact values and timestamps</p>
           </div>
         </CardContent>
       </Card>
