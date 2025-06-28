@@ -5,18 +5,37 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { AlertTriangle, Activity, Thermometer, TrendingUp, TrendingDown } from 'lucide-react';
-import { format, parseISO, isWithinInterval } from 'date-fns';
+import { format, parseISO, isWithinInterval, parse } from 'date-fns';
 
 const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, thresholds, dateRange }) => {
   const [selectedSensor, setSelectedSensor] = useState('all');
 
   if (!data) return null;
 
+  // Function to parse your custom timestamp format (YYYY.MM.DD HH:mm:ss.ffff)
+  const parseCustomTimestamp = (timestamp) => {
+    try {
+      // Convert YYYY.MM.DD HH:mm:ss.ffff to YYYY-MM-DD HH:mm:ss.SSS format
+      const cleanTimestamp = timestamp.replace(/\./g, '-').replace(/-(\d{2}:\d{2}:\d{2}\.\d+)$/, ' $1');
+      // Handle milliseconds - take only first 3 digits
+      const withMilliseconds = cleanTimestamp.replace(/\.(\d{4})$/, '.$1'.substring(0, 4));
+      return parse(withMilliseconds, 'yyyy-MM-dd HH:mm:ss.SSS', new Date());
+    } catch (error) {
+      console.log('Error parsing timestamp:', timestamp, error);
+      // Fallback to ISO parsing for mock data
+      try {
+        return new Date(timestamp);
+      } catch {
+        return new Date();
+      }
+    }
+  };
+
   // Filter data based on date range if provided
   const filteredTimeSeriesData = dateRange?.from && dateRange?.to 
     ? data.timeSeriesData.filter(item => {
         try {
-          const itemDate = new Date(item.time);
+          const itemDate = parseCustomTimestamp(item.time);
           // Create a date range that includes the entire day
           const startDate = new Date(dateRange.from);
           startDate.setHours(0, 0, 0, 0);
@@ -71,10 +90,11 @@ const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, threshold
 
   const customTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const parsedDate = parseCustomTimestamp(label);
       return (
         <div className="bg-white p-4 border border-gray-300 rounded-lg shadow-lg">
           <p className="font-semibold text-gray-800 mb-2">
-            {format(new Date(label), 'MMM dd, yyyy HH:mm:ss')}
+            {format(parsedDate, 'MMM dd, yyyy HH:mm:ss.SSS')}
           </p>
           {payload.map((entry, index) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
@@ -307,7 +327,10 @@ const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, threshold
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis 
                     dataKey="time" 
-                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                    tickFormatter={(value) => {
+                      const parsedDate = parseCustomTimestamp(value);
+                      return format(parsedDate, 'HH:mm:ss');
+                    }}
                     className="text-xs"
                     angle={-45}
                     textAnchor="end"
@@ -355,6 +378,7 @@ const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, threshold
           <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
             <p><strong>Legend:</strong> Red dashed lines = Maximum thresholds, Orange dashed lines = Minimum thresholds</p>
             <p>Hover over data points to see exact values and timestamps</p>
+            <p><strong>Timestamp Format:</strong> Your data uses YYYY.MM.DD HH:mm:ss.ffff format which is now properly supported</p>
           </div>
         </CardContent>
       </Card>

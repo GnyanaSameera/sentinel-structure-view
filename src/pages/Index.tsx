@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, BarChart3, Settings } from 'lucide-react';
@@ -27,11 +26,20 @@ const Index = () => {
     const data = [];
     const now = new Date();
     
-    // Generate data for the last 30 days
+    // Generate data for the last 30 days using your timestamp format
     for (let i = 0; i < 720; i++) { // 30 days * 24 hours
       const time = new Date(now.getTime() - (720 - i) * 60 * 60 * 1000); // hourly data points
+      // Format timestamp to match your format: YYYY.MM.DD HH:mm:ss.ffff
+      const formattedTime = time.getFullYear() + '.' + 
+                           String(time.getMonth() + 1).padStart(2, '0') + '.' + 
+                           String(time.getDate()).padStart(2, '0') + ' ' +
+                           String(time.getHours()).padStart(2, '0') + ':' +
+                           String(time.getMinutes()).padStart(2, '0') + ':' +
+                           String(time.getSeconds()).padStart(2, '0') + '.' +
+                           String(time.getMilliseconds()).padStart(3, '0') + '0'; // Add extra digit for your format
+      
       data.push({
-        time: time.toISOString(),
+        time: formattedTime,
         strain1: 50 + Math.sin(i * 0.1) * 30 + (Math.random() - 0.5) * 10,
         strain2: -20 + Math.cos(i * 0.15) * 25 + (Math.random() - 0.5) * 8,
         strain3: 80 + Math.sin(i * 0.08) * 40 + (Math.random() - 0.5) * 12,
