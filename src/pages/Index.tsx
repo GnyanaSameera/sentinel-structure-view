@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, BarChart3, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 import AlertHeader from '@/components/AlertHeader';
 import SetupTab from '@/components/SetupTab';
 import AnalysisTab from '@/components/AnalysisTab';
@@ -21,6 +22,26 @@ const Index = () => {
     temperature: { min: -10, max: 50 }
   });
   const { toast } = useToast();
+
+  const generateTimeSeriesData = () => {
+    const data = [];
+    const now = new Date();
+    
+    // Generate data for the last 30 days
+    for (let i = 0; i < 720; i++) { // 30 days * 24 hours
+      const time = new Date(now.getTime() - (720 - i) * 60 * 60 * 1000); // hourly data points
+      data.push({
+        time: time.toISOString(),
+        strain1: 50 + Math.sin(i * 0.1) * 30 + (Math.random() - 0.5) * 10,
+        strain2: -20 + Math.cos(i * 0.15) * 25 + (Math.random() - 0.5) * 8,
+        strain3: 80 + Math.sin(i * 0.08) * 40 + (Math.random() - 0.5) * 12,
+        temp1: 20 + Math.sin(i * 0.05) * 5 + (Math.random() - 0.5) * 2,
+        temp2: 25 + Math.cos(i * 0.07) * 8 + (Math.random() - 0.5) * 3,
+        temp3: 22 + Math.sin(i * 0.12) * 6 + (Math.random() - 0.5) * 2.5
+      });
+    }
+    return data;
+  };
 
   const runAnalysis = async () => {
     if (!uploadedFile || !selectedStructure || !selectedLocation) {
@@ -60,24 +81,6 @@ const Index = () => {
         description: "Sensor data has been processed successfully.",
       });
     }, 3000);
-  };
-
-  const generateTimeSeriesData = () => {
-    const data = [];
-    const now = new Date();
-    for (let i = 0; i < 100; i++) {
-      const time = new Date(now.getTime() - (100 - i) * 60000);
-      data.push({
-        time: time.toISOString(),
-        strain1: 50 + Math.sin(i * 0.1) * 30 + (Math.random() - 0.5) * 10,
-        strain2: -20 + Math.cos(i * 0.15) * 25 + (Math.random() - 0.5) * 8,
-        strain3: 80 + Math.sin(i * 0.08) * 40 + (Math.random() - 0.5) * 12,
-        temp1: 20 + Math.sin(i * 0.05) * 5 + (Math.random() - 0.5) * 2,
-        temp2: 25 + Math.cos(i * 0.07) * 8 + (Math.random() - 0.5) * 3,
-        temp3: 22 + Math.sin(i * 0.12) * 6 + (Math.random() - 0.5) * 2.5
-      });
-    }
-    return data;
   };
 
   const getAlertCount = () => {

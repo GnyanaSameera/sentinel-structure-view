@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { AlertTriangle, Activity, Thermometer, TrendingUp, TrendingDown } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isWithinInterval } from 'date-fns';
 
 const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, thresholds, dateRange }) => {
   const [selectedSensor, setSelectedSensor] = useState('all');
@@ -15,10 +15,29 @@ const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, threshold
   // Filter data based on date range if provided
   const filteredTimeSeriesData = dateRange?.from && dateRange?.to 
     ? data.timeSeriesData.filter(item => {
-        const itemDate = new Date(item.time);
-        return itemDate >= dateRange.from && itemDate <= dateRange.to;
+        try {
+          const itemDate = new Date(item.time);
+          // Create a date range that includes the entire day
+          const startDate = new Date(dateRange.from);
+          startDate.setHours(0, 0, 0, 0);
+          const endDate = new Date(dateRange.to);
+          endDate.setHours(23, 59, 59, 999);
+          
+          return isWithinInterval(itemDate, { 
+            start: startDate, 
+            end: endDate 
+          });
+        } catch (error) {
+          console.log('Date filtering error:', error, 'for item:', item);
+          return false;
+        }
       })
     : data.timeSeriesData;
+
+  console.log('Date range:', dateRange);
+  console.log('Original data points:', data.timeSeriesData.length);
+  console.log('Filtered data points:', filteredTimeSeriesData.length);
+  console.log('Sample data point:', data.timeSeriesData[0]);
 
   const getStrainStats = () => {
     const strainValues = data.sensors.map(s => s.strain);
@@ -276,56 +295,63 @@ const DataVisualization = ({ data, analysisType, onAnalysisTypeChange, threshold
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filteredTimeSeriesData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="time" 
-                  tickFormatter={(value) => format(new Date(value), 'HH:mm')}
-                  className="text-xs"
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis className="text-xs" />
-                <Tooltip content={customTooltip} />
-                <Legend />
-                
-                {/* Threshold lines for strain */}
-                {(analysisType === 'both' || analysisType === 'strain') && (
-                  <>
-                    <ReferenceLine y={thresholds.strain.max} stroke="#ef4444" strokeDasharray="5 5" strokeWidth={2} />
-                    <ReferenceLine y={thresholds.strain.min} stroke="#f97316" strokeDasharray="5 5" strokeWidth={2} />
-                  </>
-                )}
-                
-                {/* Threshold lines for temperature */}
-                {(analysisType === 'both' || analysisType === 'temperature') && (
-                  <>
-                    <ReferenceLine y={thresholds.temperature.max} stroke="#dc2626" strokeDasharray="3 3" strokeWidth={2} />
-                    <ReferenceLine y={thresholds.temperature.min} stroke="#ea580c" strokeDasharray="3 3" strokeWidth={2} />
-                  </>
-                )}
-                
-                {(analysisType === 'both' || analysisType === 'strain') && (
-                  <>
-                    <Line type="monotone" dataKey="strain1" stroke="#3b82f6" strokeWidth={2} name="Strain Sensor 1" dot={false} />
-                    <Line type="monotone" dataKey="strain2" stroke="#06b6d4" strokeWidth={2} name="Strain Sensor 2" dot={false} />
-                    <Line type="monotone" dataKey="strain3" stroke="#8b5cf6" strokeWidth={2} name="Strain Sensor 3" dot={false} />
-                  </>
-                )}
-                
-                {(analysisType === 'both' || analysisType === 'temperature') && (
-                  <>
-                    <Line type="monotone" dataKey="temp1" stroke="#f59e0b" strokeWidth={2} name="Temperature 1" dot={false} />
-                    <Line type="monotone" dataKey="temp2" stroke="#ef4444" strokeWidth={2} name="Temperature 2" dot={false} />
-                    <Line type="monotone" dataKey="temp3" stroke="#f97316" strokeWidth={2} name="Temperature 3" dot={false} />
-                  </>
-                )}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {filteredTimeSeriesData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No data points found for the selected date range.</p>
+              <p className="text-sm mt-2">Try selecting a different date range or run the initial analysis first.</p>
+            </div>
+          ) : (
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredTimeSeriesData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis 
+                    dataKey="time" 
+                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                    className="text-xs"
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis className="text-xs" />
+                  <Tooltip content={customTooltip} />
+                  <Legend />
+                  
+                  {/* Threshold lines for strain */}
+                  {(analysisType === 'both' || analysisType === 'strain') && (
+                    <>
+                      <ReferenceLine y={thresholds.strain.max} stroke="#ef4444" strokeDasharray="5 5" strokeWidth={2} />
+                      <ReferenceLine y={thresholds.strain.min} stroke="#f97316" strokeDasharray="5 5" strokeWidth={2} />
+                    </>
+                  )}
+                  
+                  {/* Threshold lines for temperature */}
+                  {(analysisType === 'both' || analysisType === 'temperature') && (
+                    <>
+                      <ReferenceLine y={thresholds.temperature.max} stroke="#dc2626" strokeDasharray="3 3" strokeWidth={2} />
+                      <ReferenceLine y={thresholds.temperature.min} stroke="#ea580c" strokeDasharray="3 3" strokeWidth={2} />
+                    </>
+                  )}
+                  
+                  {(analysisType === 'both' || analysisType === 'strain') && (
+                    <>
+                      <Line type="monotone" dataKey="strain1" stroke="#3b82f6" strokeWidth={2} name="Strain Sensor 1" dot={false} />
+                      <Line type="monotone" dataKey="strain2" stroke="#06b6d4" strokeWidth={2} name="Strain Sensor 2" dot={false} />
+                      <Line type="monotone" dataKey="strain3" stroke="#8b5cf6" strokeWidth={2} name="Strain Sensor 3" dot={false} />
+                    </>
+                  )}
+                  
+                  {(analysisType === 'both' || analysisType === 'temperature') && (
+                    <>
+                      <Line type="monotone" dataKey="temp1" stroke="#f59e0b" strokeWidth={2} name="Temperature 1" dot={false} />
+                      <Line type="monotone" dataKey="temp2" stroke="#ef4444" strokeWidth={2} name="Temperature 2" dot={false} />
+                      <Line type="monotone" dataKey="temp3" stroke="#f97316" strokeWidth={2} name="Temperature 3" dot={false} />
+                    </>
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
           <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
             <p><strong>Legend:</strong> Red dashed lines = Maximum thresholds, Orange dashed lines = Minimum thresholds</p>
             <p>Hover over data points to see exact values and timestamps</p>
