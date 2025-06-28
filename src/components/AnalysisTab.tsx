@@ -26,8 +26,13 @@ const AnalysisTab = ({
 }: AnalysisTabProps) => {
   const { toast } = useToast();
 
+  console.log('AnalysisTab rendering with data:', analysisData);
+
   const handleDateRangeAnalysis = () => {
+    console.log('Date range analysis requested with dateRange:', dateRange);
+    
     if (!analysisData) {
+      console.log('No analysis data available for date range filtering');
       toast({
         title: "No Data Available",
         description: "Please run the initial analysis first before filtering by date.",
@@ -43,6 +48,7 @@ const AnalysisTab = ({
   };
 
   if (!analysisData) {
+    console.log('No analysis data, showing empty state');
     return (
       <Card className="text-center py-12">
         <CardContent>
@@ -53,6 +59,8 @@ const AnalysisTab = ({
       </Card>
     );
   }
+
+  console.log('Rendering analysis tab with data visualization');
 
   return (
     <div className="space-y-6">

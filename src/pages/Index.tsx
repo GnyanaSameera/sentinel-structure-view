@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, BarChart3, Settings } from 'lucide-react';
@@ -23,6 +24,7 @@ const Index = () => {
   const { toast } = useToast();
 
   const generateTimeSeriesData = () => {
+    console.log('Generating time series data...');
     const data = [];
     const now = new Date();
     
@@ -48,11 +50,18 @@ const Index = () => {
         temp3: 22 + Math.sin(i * 0.12) * 6 + (Math.random() - 0.5) * 2.5
       });
     }
+    console.log('Generated data points:', data.length);
     return data;
   };
 
   const runAnalysis = async () => {
+    console.log('Starting analysis...');
+    console.log('Upload file:', uploadedFile);
+    console.log('Selected structure:', selectedStructure);
+    console.log('Selected location:', selectedLocation);
+
     if (!uploadedFile || !selectedStructure || !selectedLocation) {
+      console.log('Missing requirements for analysis');
       toast({
         title: "Missing Requirements",
         description: "Please upload a file, select structure type, and choose location.",
@@ -62,6 +71,7 @@ const Index = () => {
     }
 
     setIsAnalyzing(true);
+    console.log('Analysis started, generating mock data...');
     
     // Simulate analysis process
     setTimeout(() => {
@@ -81,6 +91,8 @@ const Index = () => {
         ]
       };
       
+      console.log('Mock data generated:', mockData);
+      console.log('Setting analysis data...');
       setAnalysisData(mockData);
       setIsAnalyzing(false);
       
@@ -88,13 +100,19 @@ const Index = () => {
         title: "Analysis Complete",
         description: "Sensor data has been processed successfully.",
       });
+      
+      console.log('Analysis completed successfully');
     }, 3000);
   };
 
   const getAlertCount = () => {
+    console.log('Getting alert count, analysisData:', analysisData);
     if (!analysisData) return 0;
     return analysisData.alerts.length;
   };
+
+  console.log('Index component rendering...');
+  console.log('Current analysis data:', analysisData);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
