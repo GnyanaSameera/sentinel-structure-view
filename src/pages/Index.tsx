@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, BarChart3, Settings } from 'lucide-react';
@@ -8,6 +7,7 @@ import AlertHeader from '@/components/AlertHeader';
 import SetupTab from '@/components/SetupTab';
 import AnalysisTab from '@/components/AnalysisTab';
 import SettingsTab from '@/components/SettingsTab';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const Index = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -138,34 +138,40 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="setup">
-            <SetupTab
-              uploadedFile={uploadedFile}
-              setUploadedFile={setUploadedFile}
-              selectedStructure={selectedStructure}
-              setSelectedStructure={setSelectedStructure}
-              selectedLocation={selectedLocation}
-              setSelectedLocation={setSelectedLocation}
-              isAnalyzing={isAnalyzing}
-              onRunAnalysis={runAnalysis}
-            />
+            <ErrorBoundary>
+              <SetupTab
+                uploadedFile={uploadedFile}
+                setUploadedFile={setUploadedFile}
+                selectedStructure={selectedStructure}
+                setSelectedStructure={setSelectedStructure}
+                selectedLocation={selectedLocation}
+                setSelectedLocation={setSelectedLocation}
+                isAnalyzing={isAnalyzing}
+                onRunAnalysis={runAnalysis}
+              />
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent value="analysis">
-            <AnalysisTab
-              analysisData={analysisData}
-              analysisType={analysisType}
-              setAnalysisType={setAnalysisType}
-              thresholds={thresholds}
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-            />
+            <ErrorBoundary>
+              <AnalysisTab
+                analysisData={analysisData}
+                analysisType={analysisType}
+                setAnalysisType={setAnalysisType}
+                thresholds={thresholds}
+                dateRange={dateRange}
+                setDateRange={setDateRange}
+              />
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent value="settings">
-            <SettingsTab
-              thresholds={thresholds}
-              setThresholds={setThresholds}
-            />
+            <ErrorBoundary>
+              <SettingsTab
+                thresholds={thresholds}
+                setThresholds={setThresholds}
+              />
+            </ErrorBoundary>
           </TabsContent>
         </Tabs>
       </div>
